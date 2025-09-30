@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nihongo Flashcards</title>
+    <title>Nihongo Flashcards - Categories</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Google Fonts for a pleasant UI and Japanese support -->
@@ -55,136 +55,240 @@
             color: white;
             transform: rotateY(180deg);
         }
+        /* Style for category buttons */
+        .category-btn {
+            @apply w-full md:w-56 p-6 rounded-2xl text-2xl font-bold transition duration-200 transform hover:scale-[1.03] active:scale-100 shadow-lg cursor-pointer;
+        }
     </style>
 </head>
 <body class="p-4 flex flex-col items-center justify-center">
 
     <div class="max-w-xl w-full mx-auto mt-8">
-        <!-- Title and Instructions -->
-        <h1 class="text-4xl font-bold text-center text-gray-800 mb-2">日本語のフラッシュカード</h1>
-        <p class="text-center text-gray-500 mb-8">Click the card to flip, or click 'Next Word' to continue.</p>
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">日本語のフラッシュカード</h1>
 
-        <!-- Flashcard Container -->
-        <div id="card-container" class="card-container w-full h-auto">
-            <div id="flashcard" class="flashcard bg-white rounded-3xl shadow-xl w-full">
-                <!-- Card Front: Japanese Word -->
-                <div id="card-front" class="card-face card-front">
-                    <div class="card-font-jp">
-                        <p id="japanese-word" class="text-6xl font-bold transition duration-300 transform scale-100 hover:scale-[1.02]">
-                            Loading...
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Card Back: English Meaning -->
-                <div id="card-back" class="card-face card-back">
-                    <p id="english-meaning" class="text-3xl font-semibold px-4">
-                        Translation will appear here.
-                    </p>
-                </div>
+        <!-- 1. CATEGORY SELECTION VIEW (Landing Page) -->
+        <div id="landing-page" class="space-y-4">
+            <h2 class="text-2xl font-semibold text-center text-gray-700 mb-6">Select a Category to Practice:</h2>
+            <div id="category-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Buttons will be injected by JavaScript or defined here -->
+                <button data-category="expression" class="category-btn bg-blue-500 text-white hover:bg-blue-600">Expressions</button>
+                <button data-category="noun" class="category-btn bg-green-500 text-white hover:bg-green-600">Nouns</button>
+                <button data-category="adjective" class="category-btn bg-yellow-500 text-gray-900 hover:bg-yellow-600">Adjectives</button>
+                <button data-category="verb" class="category-btn bg-red-500 text-white hover:bg-red-600">Verbs</button>
+                <button data-category="kanji" class="category-btn bg-indigo-500 text-white hover:bg-indigo-600">Kanji</button>
             </div>
         </div>
 
-        <!-- Next Button -->
-        <div class="mt-8 text-center">
-            <button id="next-button" class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-100 focus:outline-none focus:ring-4 focus:ring-indigo-300">
-                Next Word
-            </button>
+        <!-- 2. FLASHCARD PRACTICE VIEW -->
+        <div id="practice-view" class="hidden">
+            <p id="current-category-label" class="text-center text-xl font-medium text-gray-600 mb-4"></p>
+            
+            <!-- Flashcard Container -->
+            <div id="card-container" class="card-container w-full h-auto">
+                <div id="flashcard" class="flashcard bg-white rounded-3xl shadow-xl w-full">
+                    <!-- Card Front: Japanese Word -->
+                    <div id="card-front" class="card-face card-front">
+                        <div class="card-font-jp">
+                            <p id="japanese-word" class="text-6xl font-bold transition duration-300 transform scale-100">
+                                Loading...
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Card Back: English Meaning -->
+                    <div id="card-back" class="card-face card-back">
+                        <p id="english-meaning" class="text-3xl font-semibold px-4">
+                            Translation will appear here.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-8 flex justify-center space-x-4">
+                <button id="next-button" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-100 focus:outline-none focus:ring-4 focus:ring-indigo-300">
+                    Next Word
+                </button>
+                <button id="return-button" class="px-6 py-3 bg-gray-300 text-gray-800 font-semibold rounded-full shadow-lg hover:bg-gray-400 transition duration-300 ease-in-out">
+                    Return to Categories
+                </button>
+            </div>
         </div>
 
     </div>
 
     <!-- JavaScript for Data and Logic -->
     <script>
-        // --- 1. VOCABULARY DATA (Spreadsheet Equivalent) ---
-        // EDIT THIS ARRAY to add, remove, or modify your flashcards.
-        const vocabulary = [
-            { japanese: "こんにちは", english: "Hello / Good afternoon" },
-            { japanese: "ありがとう", english: "Thank you" },
-            { japanese: "さようなら", english: "Goodbye" },
-            { japanese: "はい", english: "Yes" },
-            { japanese: "いいえ", english: "No" },
-            { japanese: "すみません", english: "Excuse me / I'm sorry" },
-            { japanese: "いただきます", english: "I humbly receive (before eating)" },
-            { japanese: "ごちそうさま", english: "Thank you for the meal (after eating)" },
-            { japanese: "おやすみ", english: "Good night" },
-            { japanese: "おげんきですか", english: "How are you?" },
-            { japanese: "がんばって", english: "Do your best / Good luck" },
-            { japanese: "はじめまして", english: "Nice to meet you (first time)" },
-            { japanese: "いくら", english: "How much?" },
-            { japanese: "おいしい", english: "Delicious" },
-            { japanese: "きれい", english: "Pretty / Clean" },
-        ];
+        // --- 1. VOCABULARY DATA (Categorized Spreadsheet Equivalent) ---
+        // EDIT THIS OBJECT to add, remove, or modify your flashcards.
+        // Make sure to place each word under the correct category key.
+        const allVocabulary = {
+            "expression": [
+                { japanese: "こんにちは", english: "Hello / Good afternoon" },
+                { japanese: "ありがとう", english: "Thank you" },
+                { japanese: "さようなら", english: "Goodbye" },
+                { japanese: "すみません", english: "Excuse me / I'm sorry" },
+                { japanese: "いただきます", english: "I humbly receive (before eating)" },
+                { japanese: "がんばって", english: "Do your best / Good luck" },
+            ],
+            "noun": [
+                { japanese: "猫 (ねこ)", english: "Cat" },
+                { japanese: "犬 (いぬ)", english: "Dog" },
+                { japanese: "本 (ほん)", english: "Book" },
+                { japanese: "車 (くるま)", english: "Car" },
+                { japanese: "水 (みず)", english: "Water" },
+            ],
+            "adjective": [
+                { japanese: "おいしい", english: "Delicious" },
+                { japanese: "きれい", english: "Pretty / Clean" },
+                { japanese: "暑い (あつい)", english: "Hot (weather)" },
+                { japanese: "寒い (さむい)", english: "Cold (weather)" },
+                { japanese: "高い (たかい)", english: "Expensive / Tall" },
+            ],
+            "verb": [
+                { japanese: "食べる (たべる)", english: "To eat" },
+                { japanese: "飲む (のむ)", english: "To drink" },
+                { japanese: "走る (はしる)", english: "To run" },
+                { japanese: "見る (みる)", english: "To see / watch" },
+                { japanese: "聞く (きく)", english: "To hear / listen" },
+            ],
+            "kanji": [
+                { japanese: "一", english: "One" },
+                { japanese: "二", english: "Two" },
+                { japanese: "人", english: "Person" },
+                { japanese: "山", english: "Mountain" },
+                { japanese: "川", english: "River" },
+            ]
+        };
         // ----------------------------------------------------
 
         // --- 2. DOM Elements and State ---
+        const landingPage = document.getElementById('landing-page');
+        const practiceView = document.getElementById('practice-view');
+        const categoryButtonsContainer = document.getElementById('category-buttons');
+        const currentCategoryLabel = document.getElementById('current-category-label');
         const flashcard = document.getElementById('flashcard');
         const japaneseWordEl = document.getElementById('japanese-word');
         const englishMeaningEl = document.getElementById('english-meaning');
         const nextButton = document.getElementById('next-button');
+        const returnButton = document.getElementById('return-button');
 
+        let currentDeck = []; // The vocabulary array currently being practiced
         let currentWordIndex = -1;
         let isFlipped = false;
 
-        // --- 3. Core Functions ---
+        // --- 3. View Management Functions ---
 
         /**
-         * Selects a new random word from the vocabulary array and updates the display.
+         * Switches the display between the landing page and the practice view.
+         * @param {string} viewName - 'landing' or 'practice'
+         */
+        function showView(viewName) {
+            if (viewName === 'landing') {
+                landingPage.classList.remove('hidden');
+                practiceView.classList.add('hidden');
+            } else if (viewName === 'practice') {
+                landingPage.classList.add('hidden');
+                practiceView.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Starts the flashcard practice with a specific category.
+         * @param {string} category - The key of the vocabulary category.
+         */
+        function startPractice(category) {
+            const deck = allVocabulary[category];
+            if (!deck || deck.length === 0) {
+                currentCategoryLabel.textContent = `No words found for '${category}'!`;
+                return;
+            }
+
+            currentDeck = deck;
+            currentCategoryLabel.textContent = `Practicing: ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+            showView('practice');
+            loadNewWord();
+        }
+
+
+        // --- 4. Flashcard Logic Functions ---
+
+        /**
+         * Selects a new random word from the current deck and updates the display.
          */
         function loadNewWord() {
-            if (vocabulary.length === 0) {
-                japaneseWordEl.textContent = "No words to display.";
-                englishMeaningEl.textContent = "Please add words to the vocabulary array.";
-                flashcard.classList.remove('flipped');
-                isFlipped = false;
+            // Reset flip state and rotation
+            flashcard.classList.remove('flipped');
+            isFlipped = false;
+            
+            if (currentDeck.length === 0) {
+                japaneseWordEl.textContent = "Error: Deck is empty.";
+                englishMeaningEl.textContent = "Please return to categories.";
                 return;
             }
 
             // Generate a random index, ensuring it's not the same as the current word if possible
             let newIndex;
             do {
-                newIndex = Math.floor(Math.random() * vocabulary.length);
-            } while (newIndex === currentWordIndex && vocabulary.length > 1);
+                newIndex = Math.floor(Math.random() * currentDeck.length);
+            } while (newIndex === currentWordIndex && currentDeck.length > 1);
 
             currentWordIndex = newIndex;
-            isFlipped = false;
-
-            const word = vocabulary[currentWordIndex];
+            const word = currentDeck[currentWordIndex];
 
             // Update content
             japaneseWordEl.textContent = word.japanese;
             englishMeaningEl.textContent = word.english;
-
-            // Ensure card is showing the front (Japanese)
-            flashcard.classList.remove('flipped');
         }
 
         /**
          * Flips the flashcard to show the hidden meaning.
          */
         function flipCard() {
-            isFlipped = !isFlipped;
-            if (isFlipped) {
-                flashcard.classList.add('flipped');
-            } else {
-                flashcard.classList.remove('flipped');
+            // Only flip if we have a word loaded
+            if (currentDeck.length > 0) {
+                isFlipped = !isFlipped;
+                if (isFlipped) {
+                    flashcard.classList.add('flipped');
+                } else {
+                    flashcard.classList.remove('flipped');
+                }
             }
         }
 
-        // --- 4. Event Listeners ---
+        // --- 5. Event Listeners ---
+
+        // Listener for category buttons on the landing page
+        categoryButtonsContainer.addEventListener('click', (event) => {
+            const category = event.target.dataset.category;
+            if (category) {
+                startPractice(category);
+            }
+        });
 
         // Listener for tapping/clicking the card to flip it
         flashcard.addEventListener('click', flipCard);
 
         // Listener for the next button to load a new word
         nextButton.addEventListener('click', (e) => {
-            // Stop the click from propagating to the card container (preventing accidental double-flip/next)
-            e.stopPropagation();
+            e.stopPropagation(); // Prevent the click from flipping the card immediately
             loadNewWord();
         });
 
-        // --- 5. Initialization ---
-        document.addEventListener('DOMContentLoaded', loadNewWord);
+        // Listener for the "Return to Categories" button
+        returnButton.addEventListener('click', () => {
+            // Reset practice state
+            currentDeck = [];
+            currentWordIndex = -1;
+            isFlipped = false;
+            showView('landing');
+        });
+
+        // --- 6. Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Start by showing the landing page
+            showView('landing');
+        });
 
     </script>
 </body>
