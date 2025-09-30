@@ -16,6 +16,7 @@
             background-color: #f7f3f0; /* Light parchment background */
             transition: background-color 0.3s ease;
         }
+        /* Utility class to apply Japanese font (used dynamically in JS) */
         .card-font-jp {
             font-family: 'Noto Sans JP', sans-serif;
             line-height: 1.5;
@@ -70,12 +71,14 @@
         <div id="landing-page" class="space-y-4">
             <h2 class="text-2xl font-semibold text-center text-gray-700 mb-6">Select a Category to Practice:</h2>
             <div id="category-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Buttons will be injected by JavaScript or defined here -->
+                <!-- Buttons defined here -->
                 <button data-category="expression" class="category-btn bg-blue-500 text-white hover:bg-blue-600">Expressions</button>
                 <button data-category="noun" class="category-btn bg-green-500 text-white hover:bg-green-600">Nouns</button>
                 <button data-category="adjective" class="category-btn bg-yellow-500 text-gray-900 hover:bg-yellow-600">Adjectives</button>
                 <button data-category="verb" class="category-btn bg-red-500 text-white hover:bg-red-600">Verbs</button>
                 <button data-category="kanji" class="category-btn bg-indigo-500 text-white hover:bg-indigo-600">Kanji</button>
+                <!-- NEW TRAVEL CATEGORY -->
+                <button data-category="travel" class="category-btn bg-purple-500 text-white hover:bg-purple-600">Travel</button>
             </div>
         </div>
 
@@ -86,16 +89,14 @@
             <!-- Flashcard Container -->
             <div id="card-container" class="card-container w-full h-auto">
                 <div id="flashcard" class="flashcard bg-white rounded-3xl shadow-xl w-full">
-                    <!-- Card Front: Japanese Word -->
+                    <!-- Card Front: Default Japanese Word, but dynamic based on category -->
                     <div id="card-front" class="card-face card-front">
-                        <div class="card-font-jp">
-                            <p id="japanese-word" class="text-6xl font-bold transition duration-300 transform scale-100">
-                                Loading...
-                            </p>
-                        </div>
+                        <p id="japanese-word" class="text-6xl font-bold transition duration-300 transform scale-100 card-font-jp">
+                            Loading...
+                        </p>
                     </div>
 
-                    <!-- Card Back: English Meaning -->
+                    <!-- Card Back: Default English Meaning, but dynamic based on category -->
                     <div id="card-back" class="card-face card-back">
                         <p id="english-meaning" class="text-3xl font-semibold px-4">
                             Translation will appear here.
@@ -121,7 +122,7 @@
     <script>
         // --- 1. VOCABULARY DATA (Categorized Spreadsheet Equivalent) ---
         // EDIT THIS OBJECT to add, remove, or modify your flashcards.
-        // Make sure to place each word under the correct category key.
+        // The 'travel' category now requires a 'romaji' field.
         const allVocabulary = {
             "expression": [
                 { japanese: "こんにちは", english: "Hello / Good afternoon" },
@@ -158,6 +159,15 @@
                 { japanese: "人", english: "Person" },
                 { japanese: "山", english: "Mountain" },
                 { japanese: "川", english: "River" },
+            ],
+            // NEW TRAVEL CATEGORY (English on front, Japanese/Romaji on back)
+            "travel": [
+                { japanese: "切符 (きっぷ)", english: "Ticket", romaji: "kippu" },
+                { japanese: "ホテル", english: "Hotel", romaji: "hoteru" },
+                { japanese: "空港 (くうこう)", english: "Airport", romaji: "kūkō" },
+                { japanese: "駅 (えき)", english: "Train Station", romaji: "eki" },
+                { japanese: "道 (みち)", english: "Road / Way", romaji: "michi" },
+                { japanese: "両替 (りょうがえ)", english: "Money Exchange", romaji: "ryōgae" },
             ]
         };
         // ----------------------------------------------------
@@ -176,6 +186,7 @@
         let currentDeck = []; // The vocabulary array currently being practiced
         let currentWordIndex = -1;
         let isFlipped = false;
+        let isReversedDeck = false; // NEW: Flag to track if the deck should be English-first
 
         // --- 3. View Management Functions ---
 
@@ -205,6 +216,9 @@
             }
 
             currentDeck = deck;
+            // Set the reversal flag for the 'travel' category
+            isReversedDeck = (category === 'travel'); 
+            
             currentCategoryLabel.textContent = `Practicing: ${category.charAt(0).toUpperCase() + category.slice(1)}`;
             showView('practice');
             loadNewWord();
@@ -236,9 +250,37 @@
             currentWordIndex = newIndex;
             const word = currentDeck[currentWordIndex];
 
-            // Update content
-            japaneseWordEl.textContent = word.japanese;
-            englishMeaningEl.textContent = word.english;
+            // Reset element styles before updating content
+            englishMeaningEl.innerHTML = '';
+            englishMeaningEl.classList.remove('text-xl');
+            englishMeaningEl.classList.add('text-3xl'); // Default size for the back
+
+            // Update content based on deck type
+            if (isReversedDeck) {
+                // TRAVEL Deck: English on front, Japanese/Romaji on back
+                
+                // Front: English (no JP font needed)
+                japaneseWordEl.textContent = word.english;
+                japaneseWordEl.classList.remove('card-font-jp');
+                
+                // Back: Japanese + Romaji (formatted)
+                englishMeaningEl.innerHTML = `
+                    <span class="text-5xl font-bold block mb-2 card-font-jp">${word.japanese}</span>
+                    <span class="text-xl font-light opacity-80 block">${word.romaji}</span>
+                `;
+                // Remove the default text size for the custom spans to take effect
+                englishMeaningEl.classList.remove('text-3xl');
+
+            } else {
+                // STANDARD Decks: Japanese on front, English on back
+                
+                // Front: Japanese (needs JP font)
+                japaneseWordEl.textContent = word.japanese;
+                japaneseWordEl.classList.add('card-font-jp');
+                
+                // Back: English (plain text)
+                englishMeaningEl.textContent = word.english;
+            }
         }
 
         /**
@@ -281,6 +323,7 @@
             currentDeck = [];
             currentWordIndex = -1;
             isFlipped = false;
+            isReversedDeck = false;
             showView('landing');
         });
 
