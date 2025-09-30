@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nihongo Flashcards</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Google Fonts for a pleasant UI and Japanese support -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the flashcard */
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background-color: #f7f3f0; /* Light parchment background */
+            transition: background-color 0.3s ease;
+        }
+        .card-font-jp {
+            font-family: 'Noto Sans JP', sans-serif;
+            line-height: 1.5;
+        }
+        .card-container {
+            perspective: 1000px;
+        }
+        .flashcard {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            min-height: 350px; /* Ensure good touch target size */
+        }
+        /* State for when the card is flipped */
+        .flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1.5rem; /* Large rounded corners */
+            padding: 2rem;
+            text-align: center;
+        }
+        .card-front {
+            background-color: white;
+            color: #2c3e50;
+        }
+        .card-back {
+            background-color: #2c3e50;
+            color: white;
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center justify-center">
+
+    <div class="max-w-xl w-full mx-auto mt-8">
+        <!-- Title and Instructions -->
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-2">日本語のフラッシュカード</h1>
+        <p class="text-center text-gray-500 mb-8">Click the card to flip, or click 'Next Word' to continue.</p>
+
+        <!-- Flashcard Container -->
+        <div id="card-container" class="card-container w-full h-auto">
+            <div id="flashcard" class="flashcard bg-white rounded-3xl shadow-xl w-full">
+                <!-- Card Front: Japanese Word -->
+                <div id="card-front" class="card-face card-front">
+                    <div class="card-font-jp">
+                        <p id="japanese-word" class="text-6xl font-bold transition duration-300 transform scale-100 hover:scale-[1.02]">
+                            Loading...
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card Back: English Meaning -->
+                <div id="card-back" class="card-face card-back">
+                    <p id="english-meaning" class="text-3xl font-semibold px-4">
+                        Translation will appear here.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Button -->
+        <div class="mt-8 text-center">
+            <button id="next-button" class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-100 focus:outline-none focus:ring-4 focus:ring-indigo-300">
+                Next Word
+            </button>
+        </div>
+
+    </div>
+
+    <!-- JavaScript for Data and Logic -->
+    <script>
+        // --- 1. VOCABULARY DATA (Spreadsheet Equivalent) ---
+        // EDIT THIS ARRAY to add, remove, or modify your flashcards.
+        const vocabulary = [
+            { japanese: "こんにちは", english: "Hello / Good afternoon" },
+            { japanese: "ありがとう", english: "Thank you" },
+            { japanese: "さようなら", english: "Goodbye" },
+            { japanese: "はい", english: "Yes" },
+            { japanese: "いいえ", english: "No" },
+            { japanese: "すみません", english: "Excuse me / I'm sorry" },
+            { japanese: "いただきます", english: "I humbly receive (before eating)" },
+            { japanese: "ごちそうさま", english: "Thank you for the meal (after eating)" },
+            { japanese: "おやすみ", english: "Good night" },
+            { japanese: "おげんきですか", english: "How are you?" },
+            { japanese: "がんばって", english: "Do your best / Good luck" },
+            { japanese: "はじめまして", english: "Nice to meet you (first time)" },
+            { japanese: "いくら", english: "How much?" },
+            { japanese: "おいしい", english: "Delicious" },
+            { japanese: "きれい", english: "Pretty / Clean" },
+        ];
+        // ----------------------------------------------------
+
+        // --- 2. DOM Elements and State ---
+        const flashcard = document.getElementById('flashcard');
+        const japaneseWordEl = document.getElementById('japanese-word');
+        const englishMeaningEl = document.getElementById('english-meaning');
+        const nextButton = document.getElementById('next-button');
+
+        let currentWordIndex = -1;
+        let isFlipped = false;
+
+        // --- 3. Core Functions ---
+
+        /**
+         * Selects a new random word from the vocabulary array and updates the display.
+         */
+        function loadNewWord() {
+            if (vocabulary.length === 0) {
+                japaneseWordEl.textContent = "No words to display.";
+                englishMeaningEl.textContent = "Please add words to the vocabulary array.";
+                flashcard.classList.remove('flipped');
+                isFlipped = false;
+                return;
+            }
+
+            // Generate a random index, ensuring it's not the same as the current word if possible
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * vocabulary.length);
+            } while (newIndex === currentWordIndex && vocabulary.length > 1);
+
+            currentWordIndex = newIndex;
+            isFlipped = false;
+
+            const word = vocabulary[currentWordIndex];
+
+            // Update content
+            japaneseWordEl.textContent = word.japanese;
+            englishMeaningEl.textContent = word.english;
+
+            // Ensure card is showing the front (Japanese)
+            flashcard.classList.remove('flipped');
+        }
+
+        /**
+         * Flips the flashcard to show the hidden meaning.
+         */
+        function flipCard() {
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                flashcard.classList.add('flipped');
+            } else {
+                flashcard.classList.remove('flipped');
+            }
+        }
+
+        // --- 4. Event Listeners ---
+
+        // Listener for tapping/clicking the card to flip it
+        flashcard.addEventListener('click', flipCard);
+
+        // Listener for the next button to load a new word
+        nextButton.addEventListener('click', (e) => {
+            // Stop the click from propagating to the card container (preventing accidental double-flip/next)
+            e.stopPropagation();
+            loadNewWord();
+        });
+
+        // --- 5. Initialization ---
+        document.addEventListener('DOMContentLoaded', loadNewWord);
+
+    </script>
+</body>
+</html>
